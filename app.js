@@ -14,7 +14,7 @@ let state = {
     imageObj: null,
     strokeColor: "#ff0000",
     strokeWidth: 2,
-    errorMessage: ""
+    errorMessage: "",
 };
 
 // DOM elements
@@ -24,39 +24,39 @@ let elements = {};
 function init() {
     // Cache DOM elements
     elements = {
-        fileInput: document.getElementById('file-input'),
-        errorDiv: document.getElementById('error-message'),
-        canvasContainer: document.getElementById('canvas-container'),
-        canvas: document.getElementById('main-canvas'),
-        heightInput: document.getElementById('height-input'),
-        widthInput: document.getElementById('width-input'),
-        ratioDisplay: document.getElementById('ratio-display'),
-        colorInput: document.getElementById('color-input'),
-        strokeWidthInput: document.getElementById('stroke-width-input'),
-        strokeWidthDisplay: document.getElementById('stroke-width-display')
+        fileInput: document.getElementById("file-input"),
+        errorDiv: document.getElementById("error-message"),
+        canvasContainer: document.getElementById("canvas-container"),
+        canvas: document.getElementById("main-canvas"),
+        heightInput: document.getElementById("height-input"),
+        widthInput: document.getElementById("width-input"),
+        ratioDisplay: document.getElementById("ratio-display"),
+        colorInput: document.getElementById("color-input"),
+        strokeWidthInput: document.getElementById("stroke-width-input"),
+        strokeWidthDisplay: document.getElementById("stroke-width-display"),
     };
 
     // Attach event listeners
-    elements.fileInput.addEventListener('change', handleFileChange);
-    elements.heightInput.addEventListener('input', onHeightBoxInput);
-    elements.widthInput.addEventListener('input', onWidthBoxInput);
-    elements.colorInput.addEventListener('input', (e) => {
+    elements.fileInput.addEventListener("change", handleFileChange);
+    elements.heightInput.addEventListener("input", onHeightBoxInput);
+    elements.widthInput.addEventListener("input", onWidthBoxInput);
+    elements.colorInput.addEventListener("input", (e) => {
         state.strokeColor = e.target.value;
         drawCanvas();
     });
-    elements.strokeWidthInput.addEventListener('input', (e) => {
+    elements.strokeWidthInput.addEventListener("input", (e) => {
         state.strokeWidth = parseInt(e.target.value);
         elements.strokeWidthDisplay.textContent = `${state.strokeWidth}px`;
         drawCanvas();
     });
     // Dropdown download options
-    document.getElementById('download-file').addEventListener('click', (e) => {
+    document.getElementById("download-file").addEventListener("click", (e) => {
         e.preventDefault();
-        downloadCanvas('file');
+        downloadCanvas("file");
     });
-    document.getElementById('download-photo').addEventListener('click', (e) => {
+    document.getElementById("download-photo").addEventListener("click", (e) => {
         e.preventDefault();
-        downloadCanvas('photo');
+        downloadCanvas("photo");
     });
 }
 
@@ -75,7 +75,9 @@ function handleFileChange(e) {
 
     // Validate file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
-        showError("Image file is too large. Please select an image under 10MB.");
+        showError(
+            "Image file is too large. Please select an image under 10MB."
+        );
         return;
     }
 
@@ -99,7 +101,9 @@ function loadImage() {
             img.naturalWidth > MAX_IMAGE_SIZE ||
             img.naturalHeight > MAX_IMAGE_SIZE
         ) {
-            showError(`Image is too large. Maximum size is ${MAX_IMAGE_SIZE}x${MAX_IMAGE_SIZE} pixels.`);
+            showError(
+                `Image is too large. Maximum size is ${MAX_IMAGE_SIZE}x${MAX_IMAGE_SIZE} pixels.`
+            );
             URL.revokeObjectURL(state.imageUrl);
             state.imageUrl = "";
             return;
@@ -131,7 +135,7 @@ function updateImageDimensions() {
             Math.min(state.widthValue, state.heightValue) /
             Math.max(state.widthValue, state.heightValue)
         ).toFixed(3);
-        
+
         // Update UI
         elements.heightInput.value = state.heightValue;
         elements.widthInput.value = state.widthValue;
@@ -175,11 +179,11 @@ function updateRatio() {
 // Draw canvas with grid overlay
 function drawCanvas() {
     if (!elements.canvas || !state.imageObj) return;
-    
+
     const canvas = elements.canvas;
     canvas.width = state.imageObj.naturalWidth;
     canvas.height = state.imageObj.naturalHeight;
-    
+
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(state.imageObj, 0, 0);
@@ -189,7 +193,7 @@ function drawCanvas() {
 
     const w = canvas.width;
     const h = canvas.height;
-    
+
     // Center lines
     ctx.beginPath();
     ctx.moveTo(w / 2, 0);
@@ -253,14 +257,14 @@ function drawWidthRulerLine(ctx, w, h) {
 // Download canvas as PNG
 function downloadCanvas() {
     if (!elements.canvas) return;
-    let mode = arguments[0] || 'file';
-    elements.canvas.toBlob((blob) => {
-        if (!blob) {
-            showError("Failed to generate image. Please try again.");
-            return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (mode === 'file') {
+    let mode = arguments[0] || "file";
+    if (mode === "file") {
+        elements.canvas.toBlob((blob) => {
+            if (!blob) {
+                showError("Failed to generate image. Please try again.");
+                return;
+            }
+            const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
             a.download = `grid-overlay-${Date.now()}.png`;
@@ -271,49 +275,63 @@ function downloadCanvas() {
             requestAnimationFrame(() => {
                 URL.revokeObjectURL(url);
             });
-        } else if (mode === 'photo') {
-            window.open(url, '_blank');
-            setTimeout(() => {
-                URL.revokeObjectURL(url);
-            }, 60000);
+        }, "image/png");
+    } else if (mode === "photo") {
+        // iOS/Safari workaround: open data URL in new tab for long-press save
+        const dataUrl = elements.canvas.toDataURL("image/png");
+        const win = window.open("", "_blank");
+        if (win) {
+            win.document.title = "Save Image";
+            win.document.body.style.margin = "0";
+            win.document.body.style.display = "flex";
+            win.document.body.style.justifyContent = "center";
+            win.document.body.style.alignItems = "center";
+            win.document.body.style.height = "100vh";
+            win.document.body.style.background = "#fff";
+            const img = win.document.createElement("img");
+            img.src = dataUrl;
+            img.style.maxWidth = "100vw";
+            img.style.maxHeight = "100vh";
+            img.alt = "Grid Greed Image";
+            win.document.body.appendChild(img);
         }
-    }, "image/png");
+    }
 }
 
 // Show error message
 function showError(message) {
     state.errorMessage = message;
     elements.errorDiv.textContent = message;
-    elements.errorDiv.style.display = 'block';
+    elements.errorDiv.style.display = "block";
 }
 
 // Clear error message
 function clearError() {
     state.errorMessage = "";
     elements.errorDiv.textContent = "";
-    elements.errorDiv.style.display = 'none';
+    elements.errorDiv.style.display = "none";
 }
 
 // Show canvas container
 function showCanvas() {
-    elements.canvasContainer.style.display = 'block';
+    elements.canvasContainer.style.display = "block";
     // Hide the logo when a photo is selected
-    const logoContainer = document.getElementById('logo-container');
+    const logoContainer = document.getElementById("logo-container");
     if (logoContainer) {
-        logoContainer.classList.add('d-none');
+        logoContainer.classList.add("d-none");
     }
 }
 
 // Cleanup on page unload
-window.addEventListener('beforeunload', () => {
+window.addEventListener("beforeunload", () => {
     if (state.imageUrl) {
         URL.revokeObjectURL(state.imageUrl);
     }
 });
 
 // Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
 } else {
     init();
 }
