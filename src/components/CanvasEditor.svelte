@@ -1,12 +1,25 @@
 <script>
+    import { onDestroy } from "svelte";
+
+    // Constants
+    const MAX_IMAGE_SIZE = 10000; // Max width or height in pixels
+    const RULER_OFFSET = 56;
+    const RULER_WIDTH = 48;
+    const RULER_LINE_WIDTH = 3;
+
+    // State
     let widthValue = 0;
     let heightValue = 0;
     let ratio = null;
-    let suppressSync = false;
-    let canvasRect = { width: 0, height: 0 };
     let imgRatio = null; // always width / height
-    let widthInput = "";
-    let heightInput = "";
+
+    let imageUrl = "";
+    let imageObj = null;
+    let canvasEl;
+    let ctx;
+    let strokeColor = "#ff0000";
+    let strokeWidth = 2;
+    let errorMessage = "";
 
     // Update ruler values and ratio only when the image changes
     let lastImageSrc = null;
@@ -26,26 +39,24 @@
     }
     function onWidthBoxInput(e) {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val) && val > 0 && imgRatio) {
+        // Only update if valid positive number and ratio exists
+        if (!isNaN(val) && val > 0 && imgRatio && imgRatio > 0) {
             widthValue = val;
             heightValue = +(val / imgRatio).toFixed(2);
-        } else if (!isNaN(val)) {
-            widthValue = val;
         }
     }
 
     function onHeightBoxInput(e) {
         const val = parseFloat(e.target.value);
-        if (!isNaN(val) && val > 0 && imgRatio) {
+        // Only update if valid positive number and ratio exists
+        if (!isNaN(val) && val > 0 && imgRatio && imgRatio > 0) {
             heightValue = val;
             widthValue = +(val * imgRatio).toFixed(2);
-        } else if (!isNaN(val)) {
-            heightValue = val;
         }
     }
 
     // Keep ratio in sync when widthValue or heightValue changes
-    $: if (!suppressSync && widthValue > 0 && heightValue > 0) {
+    $: if (widthValue > 0 && heightValue > 0) {
         ratio = (
             Math.min(widthValue, heightValue) /
             Math.max(widthValue, heightValue)
@@ -56,7 +67,7 @@
     function drawHeightRulerLine(w, h) {
         ctx.save();
         ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = RULER_LINE_WIDTH;
         ctx.beginPath();
         ctx.moveTo(w + 12, 0);
         ctx.lineTo(w + 12, h);
@@ -68,7 +79,7 @@
     function drawWidthRulerLine(w, h) {
         ctx.save();
         ctx.strokeStyle = "#000";
-        ctx.lineWidth = 3;
+        ctx.lineWidth = RULER_LINE_WIDTH;
         ctx.beginPath();
         ctx.moveTo(0, h + 12);
         ctx.lineTo(w, h + 12);
@@ -80,34 +91,36 @@
         drawHeightRulerLine(w, h);
         drawWidthRulerLine(w, h);
     }
-    let imageFile = null;
-    let imageUrl = "";
-    let imageObj = null;
-    let canvasEl;
-    let ctx;
-    let strokeColor = "#ff0000";
-    let strokeWidth = 2;
 
     function handleFileChange(e) {
         const file = e.target.files[0];
         if (!file) return;
-        console.log("[File] Selected:", file.name, file.size, file.type);
-        imageFile = file;
+
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+            errorMessage = "Please select a valid image file.";
+            return;
+        }
+
+        // Validate file size (10MB limit)
+        if (file.size > 10 * 1024 * 1024) {
+            errorMessage =
+                "Image file is too large. Please select an image under 10MB.";
+            return;
+        }
+
+        errorMessage = "";
+
         // Revoke previous object URL to avoid memory leaks
         if (imageUrl) {
-            console.log("[Memory] Revoking previous object URL");
             URL.revokeObjectURL(imageUrl);
         }
         imageUrl = URL.createObjectURL(file);
-        console.log("[File] Created object URL:", imageUrl);
         loadImage();
     }
 
-    import { onDestroy } from "svelte";
-
     // Revoke object URL on component destroy
     onDestroy(() => {
-        console.log("[Memory] Component destroyed, revoking object URL");
         if (imageUrl) {
             URL.revokeObjectURL(imageUrl);
         }
@@ -118,24 +131,30 @@
         if (!imageUrl) return;
         const img = new window.Image();
         img.onload = () => {
+            // Validate image dimensions
+            if (
+                img.naturalWidth > MAX_IMAGE_SIZE ||
+                img.naturalHeight > MAX_IMAGE_SIZE
+            ) {
+                errorMessage = `Image is too large. Maximum size is ${MAX_IMAGE_SIZE}x${MAX_IMAGE_SIZE} pixels.`;
+                URL.revokeObjectURL(imageUrl);
+                imageUrl = "";
+                return;
+            }
             imageObj = img;
-            console.log(
-                "[Image] Loaded:",
-                img.naturalWidth,
-                "x",
-                img.naturalHeight
-            );
             drawCanvas();
         };
-        img.onerror = (e) => {
+        img.onerror = () => {
             imageObj = null;
-            console.error("[Image] Failed to load", e);
+            errorMessage = "Failed to load image. Please try a different file.";
+            URL.revokeObjectURL(imageUrl);
+            imageUrl = "";
         };
         img.src = imageUrl;
     }
 
     // Redraw canvas when image or controls change
-    $: if (imageObj || strokeColor || strokeWidth) {
+    $: if (imageObj && strokeColor && strokeWidth) {
         drawCanvas();
     }
 
@@ -172,18 +191,7 @@
         drawDiagonals(w / 2, h / 2, w, h);
 
         drawRulers(w, h);
-        // Only update canvasRect when the image changes (for initial layout, not on every overlay change)
-        if (imageObj && canvasEl) {
-            const rect = canvasEl.getBoundingClientRect();
-            canvasRect = { width: rect.width, height: rect.height };
-        }
         ctx.restore();
-        console.log(
-            "[Canvas] Redrawn with color:",
-            strokeColor,
-            "width:",
-            strokeWidth
-        );
     }
 
     function drawDiagonals(x0, y0, x1, y1) {
@@ -201,21 +209,23 @@
         if (!canvasEl) return;
         canvasEl.toBlob((blob) => {
             if (!blob) {
-                console.error("[Download] Failed to create blob");
+                errorMessage = "Failed to generate download. Please try again.";
                 return;
             }
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = "great-grid.png";
+            a.download = `grid-overlay-${Date.now()}.png`;
+            a.style.display = "none";
             document.body.appendChild(a);
             a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
+
+            // Clean up immediately after click
+            document.body.removeChild(a);
+            // Revoke URL after a short delay to ensure download starts
+            requestAnimationFrame(() => {
                 URL.revokeObjectURL(url);
-                console.log("[Download] Blob URL revoked");
-            }, 100);
-            console.log("[Download] Image downloaded");
+            });
         }, "image/png");
     }
 </script>
@@ -226,7 +236,16 @@
         accept="image/*"
         capture="environment"
         on:change={handleFileChange}
+        aria-label="Upload an image to overlay with grid"
     />
+    {#if errorMessage}
+        <div
+            role="alert"
+            style="color: #d32f2f; padding: 1rem; margin: 1rem 0; background: #ffebee; border-radius: 4px;"
+        >
+            {errorMessage}
+        </div>
+    {/if}
     {#if imageUrl}
         <div
             style="display: flex; flex-direction: row; align-items: flex-start; justify-content: center; margin: 1rem 0; width: 100%; max-width: 100vw; box-sizing: border-box;"
@@ -242,7 +261,7 @@
                     {#if imageObj}
                         <!-- Right vertical ruler line and box, scaled with canvas -->
                         <div
-                            style="position: absolute; top: 0; right: -56px; height: 100%; min-width: 48px; display: flex; align-items: center;"
+                            style="position: absolute; top: 0; right: -{RULER_OFFSET}px; height: 100%; min-width: {RULER_WIDTH}px; display: flex; align-items: center;"
                         >
                             <div
                                 style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: #000; transform: translateX(-50%);"
@@ -253,7 +272,8 @@
                                 step="1"
                                 bind:value={heightValue}
                                 on:input={onHeightBoxInput}
-                                style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
+                                aria-label="Image height"
+                                style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: {RULER_WIDTH}px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
                             />
                         </div>
                     {/if}
@@ -272,7 +292,8 @@
                             step="1"
                             bind:value={widthValue}
                             on:input={onWidthBoxInput}
-                            style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
+                            aria-label="Image width"
+                            style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: {RULER_WIDTH}px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
                         />
                     </div>
                 {/if}
@@ -296,7 +317,7 @@
                 <input type="range" min="1" max="20" bind:value={strokeWidth} />
                 <span>{strokeWidth}px</span>
             </label>
-            <button type="button" on:click={downloadCanvas}>Download</button>
         </div>
+        <button type="button" on:click={downloadCanvas}>Download</button>
     {/if}
 </div>
