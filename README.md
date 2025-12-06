@@ -1,5 +1,9 @@
 # Grid Greed
 
+<div align="center" style="margin-top: 24px; margin-bottom: 24px;">
+    <img src="logo.png" alt="Grid Greed Logo" width="200" style="display: block; margin-left: auto; margin-right: auto;" />
+</div>
+
 Mobile-first web app for art students: upload a photo, overlay grid and diagonals, adjust line style, and download/share the result.
 
 ## 🚀 Live Demo
@@ -28,13 +32,14 @@ php -S localhost:8000
 Then open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ## Features
-- ✅ Upload/capture photo (mobile-first)
-- ✅ Draw center lines and diagonals in each quadrant
-- ✅ Adjust line color and width
-- ✅ Show aspect ratio
-- ✅ Interactive dimension rulers
-- ✅ Download processed image
-- ✅ Canvas rendering and export
+
+-   ✅ Upload/capture photo (mobile-first)
+-   ✅ Draw center lines and diagonals in each quadrant
+-   ✅ Adjust line color and width
+-   ✅ Show aspect ratio
+-   ✅ Interactive dimension rulers
+-   ✅ Download processed image
+-   ✅ Canvas rendering and export
 
 ## GitHub Pages Deployment
 
@@ -45,15 +50,15 @@ The app automatically deploys to GitHub Pages when you push to the `main` branch
 1. Go to your repository Settings
 2. Navigate to "Pages" in the left sidebar
 3. Under "Build and deployment", select:
-   - Source: "GitHub Actions"
+    - Source: "GitHub Actions"
 4. Push to main branch - the app will deploy automatically!
 
 ## Technology
 
-- Pure vanilla JavaScript (no frameworks)
-- HTML5 Canvas API
-- CSS3
-- No build tools required
+-   Pure vanilla JavaScript (no frameworks)
+-   HTML5 Canvas API
+-   CSS3
+-   No build tools required
 
 ## Project Structure
 
@@ -66,4 +71,3 @@ The app automatically deploys to GitHub Pages when you push to the `main` branch
     └── workflows/
         └── deploy.yml # GitHub Actions deployment
 ```
-
