@@ -1,22 +1,46 @@
 <script>
-    // Ruler values and sync logic
     let widthValue = 0;
     let heightValue = 0;
     let ratio = null;
     let suppressSync = false;
     let canvasRect = { width: 0, height: 0 };
+    let imgRatio = null; // always width / height
+    let widthInput = "";
+    let heightInput = "";
 
-    // Update ruler values and ratio when image changes
-    $: if (imageObj) {
+    // Update ruler values and ratio only when the image changes
+    let lastImageSrc = null;
+    $: if (imageObj && imageObj.src !== lastImageSrc) {
+        lastImageSrc = imageObj.src;
         const w = imageObj.naturalWidth;
         const h = imageObj.naturalHeight;
         if (w && h) {
             widthValue = w;
             heightValue = h;
+            imgRatio = w / h;
             ratio = (
                 Math.min(widthValue, heightValue) /
                 Math.max(widthValue, heightValue)
-            ).toFixed(3);
+            ).toFixed(2);
+        }
+    }
+    function onWidthBoxInput(e) {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val > 0 && imgRatio) {
+            widthValue = val;
+            heightValue = +(val / imgRatio).toFixed(2);
+        } else if (!isNaN(val)) {
+            widthValue = val;
+        }
+    }
+
+    function onHeightBoxInput(e) {
+        const val = parseFloat(e.target.value);
+        if (!isNaN(val) && val > 0 && imgRatio) {
+            heightValue = val;
+            widthValue = +(val * imgRatio).toFixed(2);
+        } else if (!isNaN(val)) {
+            heightValue = val;
         }
     }
 
@@ -26,40 +50,6 @@
             Math.min(widthValue, heightValue) /
             Math.max(widthValue, heightValue)
         ).toFixed(3);
-    }
-
-    function onWidthInput(e) {
-        suppressSync = true;
-        widthValue = parseFloat(e.target.value) || 0;
-        if (heightValue > 0) {
-            if (widthValue >= heightValue) {
-                heightValue = +(
-                    heightValue *
-                    (widthValue / widthValue)
-                ).toFixed(2);
-            } else {
-                heightValue = +(
-                    widthValue *
-                    (heightValue / widthValue)
-                ).toFixed(2);
-            }
-        }
-        suppressSync = false;
-    }
-
-    function onHeightInput(e) {
-        suppressSync = true;
-        heightValue = parseFloat(e.target.value) || 0;
-        if (widthValue < 0) {
-            return;
-        }
-
-        if (heightValue >= widthValue) {
-            widthValue = +(widthValue * (heightValue / heightValue)).toFixed(2);
-        } else {
-            widthValue = +(heightValue * (widthValue / heightValue)).toFixed(2);
-        }
-        suppressSync = false;
     }
 
     // Draw a vertical black line to the right of the canvas for the height ruler
@@ -262,7 +252,7 @@
                                 min="1"
                                 step="1"
                                 bind:value={heightValue}
-                                on:input={onHeightInput}
+                                on:input={onHeightBoxInput}
                                 style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
                             />
                         </div>
@@ -281,13 +271,19 @@
                             min="1"
                             step="1"
                             bind:value={widthValue}
-                            on:input={onWidthInput}
+                            on:input={onWidthBoxInput}
                             style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
                         />
                     </div>
                 {/if}
             </div>
         </div>
+        {#if ratio}
+            <div style="margin-bottom: 1rem; font-size: 1.1em;">
+                <strong>Ratio (short/long):</strong>
+                {ratio}
+            </div>
+        {/if}
         <div
             style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;"
         >
@@ -302,11 +298,5 @@
             </label>
             <button type="button" on:click={downloadCanvas}>Download</button>
         </div>
-        {#if ratio}
-            <div style="margin-bottom: 1rem; font-size: 1.1em;">
-                <strong>Ratio (short/long):</strong>
-                {ratio}
-            </div>
-        {/if}
     {/if}
 </div>
