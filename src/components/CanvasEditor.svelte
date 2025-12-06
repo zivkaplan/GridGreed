@@ -13,13 +13,19 @@
         if (w && h) {
             widthValue = w;
             heightValue = h;
-            ratio = (Math.min(widthValue, heightValue) / Math.max(widthValue, heightValue)).toFixed(3);
+            ratio = (
+                Math.min(widthValue, heightValue) /
+                Math.max(widthValue, heightValue)
+            ).toFixed(3);
         }
     }
 
     // Keep ratio in sync when widthValue or heightValue changes
     $: if (!suppressSync && widthValue > 0 && heightValue > 0) {
-        ratio = (Math.min(widthValue, heightValue) / Math.max(widthValue, heightValue)).toFixed(3);
+        ratio = (
+            Math.min(widthValue, heightValue) /
+            Math.max(widthValue, heightValue)
+        ).toFixed(3);
     }
 
     function onWidthInput(e) {
@@ -27,9 +33,15 @@
         widthValue = parseFloat(e.target.value) || 0;
         if (heightValue > 0) {
             if (widthValue >= heightValue) {
-                heightValue = +(heightValue * (widthValue / widthValue)).toFixed(2);
+                heightValue = +(
+                    heightValue *
+                    (widthValue / widthValue)
+                ).toFixed(2);
             } else {
-                heightValue = +(widthValue * (heightValue / widthValue)).toFixed(2);
+                heightValue = +(
+                    widthValue *
+                    (heightValue / widthValue)
+                ).toFixed(2);
             }
         }
         suppressSync = false;
@@ -38,12 +50,14 @@
     function onHeightInput(e) {
         suppressSync = true;
         heightValue = parseFloat(e.target.value) || 0;
-        if (widthValue > 0) {
-            if (heightValue >= widthValue) {
-                widthValue = +(widthValue * (heightValue / heightValue)).toFixed(2);
-            } else {
-                widthValue = +(heightValue * (widthValue / heightValue)).toFixed(2);
-            }
+        if (widthValue < 0) {
+            return;
+        }
+
+        if (heightValue >= widthValue) {
+            widthValue = +(widthValue * (heightValue / heightValue)).toFixed(2);
+        } else {
+            widthValue = +(heightValue * (widthValue / heightValue)).toFixed(2);
         }
         suppressSync = false;
     }
@@ -51,7 +65,7 @@
     // Draw a vertical black line to the right of the canvas for the height ruler
     function drawHeightRulerLine(w, h) {
         ctx.save();
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(w + 12, 0);
@@ -63,7 +77,7 @@
     // Draw a horizontal black line below the canvas for the width ruler
     function drawWidthRulerLine(w, h) {
         ctx.save();
-        ctx.strokeStyle = '#000';
+        ctx.strokeStyle = "#000";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, h + 12);
@@ -168,13 +182,11 @@
         drawDiagonals(w / 2, h / 2, w, h);
 
         drawRulers(w, h);
-        // Update canvasRect for ruler box positioning
-        setTimeout(() => {
-            if (canvasEl) {
-                const rect = canvasEl.getBoundingClientRect();
-                canvasRect = { width: rect.width, height: rect.height };
-            }
-        }, 0);
+        // Only update canvasRect when the image changes (for initial layout, not on every overlay change)
+        if (imageObj && canvasEl) {
+            const rect = canvasEl.getBoundingClientRect();
+            canvasRect = { width: rect.width, height: rect.height };
+        }
         ctx.restore();
         console.log(
             "[Canvas] Redrawn with color:",
@@ -226,34 +238,65 @@
         on:change={handleFileChange}
     />
     {#if imageUrl}
-        <div style="display: flex; flex-direction: row; align-items: flex-start; justify-content: center; margin: 1rem 0;">
-            {#if imageObj}
-                <!-- Left vertical ruler line and box -->
-                <div style="position: relative; height: {canvasRect.height}px; min-width: 48px; display: flex; align-items: center;">
-                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: #000; transform: translateX(-50%);"></div>
-                    <input type="number" min="1" step="1" bind:value={heightValue}
-                        on:input={onHeightInput}
-                        style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;" />
+        <div
+            style="display: flex; flex-direction: row; align-items: flex-start; justify-content: center; margin: 1rem 0; width: 100%; max-width: 100vw; box-sizing: border-box;"
+        >
+            <div
+                style="position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 100vw;"
+            >
+                <div style="position: relative; width: 100%; max-width: 100vw;">
+                    <canvas
+                        bind:this={canvasEl}
+                        style="width: 100%; height: auto; max-width: 100vw; border: 1px solid #ccc; display: block;"
+                    ></canvas>
+                    {#if imageObj}
+                        <!-- Right vertical ruler line and box, scaled with canvas -->
+                        <div
+                            style="position: absolute; top: 0; right: -56px; height: 100%; min-width: 48px; display: flex; align-items: center;"
+                        >
+                            <div
+                                style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: #000; transform: translateX(-50%);"
+                            ></div>
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                bind:value={heightValue}
+                                on:input={onHeightInput}
+                                style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
+                            />
+                        </div>
+                    {/if}
                 </div>
-            {/if}
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-                <canvas bind:this={canvasEl} style="max-width: 100%; border: 1px solid #ccc; display: block;"></canvas>
                 {#if imageObj}
-                    <!-- Bottom horizontal ruler line and box -->
-                    <div style="position: relative; width: {canvasRect.width}px; height: 48px;">
-                        <div style="position: absolute; left: 0; top: 50%; width: 100%; height: 3px; background: #000; transform: translateY(-50%);"></div>
-                        <input type="number" min="1" step="1" bind:value={widthValue}
+                    <!-- Bottom horizontal ruler line and box, scaled with canvas -->
+                    <div
+                        style="position: relative; width: 100%; max-width: 100vw; height: 48px;"
+                    >
+                        <div
+                            style="position: absolute; left: 0; top: 50%; width: 100%; height: 3px; background: #000; transform: translateY(-50%);"
+                        ></div>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            bind:value={widthValue}
                             on:input={onWidthInput}
-                            style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;" />
+                            style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 48px; background: #fff; border: 2px solid #000; text-align: center; z-index: 10; pointer-events: auto;"
+                        />
                     </div>
                 {/if}
             </div>
         </div>
-        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
-            <label>Color:
+        <div
+            style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;"
+        >
+            <label
+                >Color:
                 <input type="color" bind:value={strokeColor} />
             </label>
-            <label>Width:
+            <label
+                >Width:
                 <input type="range" min="1" max="20" bind:value={strokeWidth} />
                 <span>{strokeWidth}px</span>
             </label>
@@ -261,7 +304,8 @@
         </div>
         {#if ratio}
             <div style="margin-bottom: 1rem; font-size: 1.1em;">
-                <strong>Ratio (short/long):</strong> {ratio}
+                <strong>Ratio (short/long):</strong>
+                {ratio}
             </div>
         {/if}
     {/if}
