@@ -1,18 +1,10 @@
 {
-  "name": "great-grid",
+  "name": "grid-greed",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "svelte": "^4.0.0"
-  },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.0.0",
-    "vite": "^4.0.0"
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'No build step needed for vanilla JS'",
+    "preview": "python3 -m http.server 8000"
   }
 }
