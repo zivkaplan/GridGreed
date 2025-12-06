@@ -1,3 +1,9 @@
+/* Animated logo scaling */
+.logo-animate {
+    transition: transform 0.6s cubic-bezier(0.4,0,0.2,1), max-width 0.6s cubic-bezier(0.4,0,0.2,1);
+    transform: scale(0.5);
+    max-width: 48px !important;
+}
 /* Reset and base styles */
 * {
     box-sizing: border-box;

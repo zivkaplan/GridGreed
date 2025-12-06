@@ -297,6 +297,11 @@ function clearError() {
 // Show canvas container
 function showCanvas() {
     elements.canvasContainer.style.display = 'block';
+    // Hide the logo when a photo is selected
+    const logoContainer = document.getElementById('logo-container');
+    if (logoContainer) {
+        logoContainer.classList.add('d-none');
+    }
 }
 
 // Cleanup on page unload
