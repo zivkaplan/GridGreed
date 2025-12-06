@@ -1,4 +1,4 @@
-# Great Grid
+# Grid Greed
 
 Mobile-first web app for art students: upload a photo, overlay grid and diagonals, adjust line style, and download/share the result.
 

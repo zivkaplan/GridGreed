@@ -3,7 +3,7 @@
 </script>
 
 <main>
-  <h1>Great Grid</h1>
+  <h1>Grid Greed</h1>
   <CanvasEditor />
 </main>
 
