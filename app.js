@@ -59,56 +59,72 @@ function init() {
 // Create HTML structure
 function createHTML() {
     return `
-        <div>
-            <input
-                type="file"
-                id="file-input"
-                accept="image/*"
-                capture="environment"
-                aria-label="Upload an image to overlay with grid"
-            />
-            <div id="error-message" role="alert" style="display: none;"></div>
-            <div id="canvas-container" style="display: none;">
-                <div class="canvas-wrapper">
-                    <div class="canvas-relative-container">
-                        <canvas id="main-canvas"></canvas>
-                        <div class="height-ruler">
-                            <div class="ruler-line-vertical"></div>
+        <div class="card shadow-sm mx-auto" style="max-width: 480px;">
+            <div class="card-body">
+                <div class="mb-3 text-center">
+                    <input
+                        type="file"
+                        id="file-input"
+                        accept="image/*"
+                        capture="environment"
+                        aria-label="Upload an image to overlay with grid"
+                        class="form-control form-control-lg mx-auto"
+                        style="max-width: 320px;"
+                    />
+                </div>
+                <div id="error-message" role="alert" class="alert alert-danger text-center" style="display: none;"></div>
+                <div id="canvas-container" class="mt-3" style="display: none;">
+                    <div class="canvas-ruler-flex d-flex flex-column align-items-stretch mx-auto" style="max-width: 400px;">
+                        <div class="phantom-row d-flex flex-row align-items-center w-100" style="height: 2.5em;">
+                            <div class="phantom-box" style="width: 6ch;"></div>
+                            <div class="flex-grow-1"></div>
+                            <div class="phantom-box" style="width: 6ch;"></div>
+                        </div>
+                        <div class="d-flex flex-row align-items-center w-100">
+                            <div class="phantom-box" style="width: 6ch;"></div>
+                            <div class="canvas-ruler-container position-relative flex-grow-1" style="width: 100%;">
+                                <canvas id="main-canvas" class="border-0" style="width: 100%; display: block;"></canvas>
+                                <div class="ruler-outline-vertical"></div>
+                                <div class="ruler-outline-horizontal"></div>
+                            </div>
                             <input
                                 type="number"
                                 id="height-input"
                                 min="1"
                                 step="1"
                                 aria-label="Image height"
-                                class="ruler-input ruler-input-vertical"
+                                class="ruler-input ruler-input-vertical form-control text-center ms-2"
+                                style="width: 6ch; font-size: 1.1em; background: #fff; border: 2px solid #1976d2; z-index: 2;"
                             />
                         </div>
+                        <div class="d-flex flex-row align-items-center justify-content-center mt-2 w-100" style="height: 2.5em;">
+                            <div class="phantom-box" style="width: 6ch;"></div>
+                            <input
+                                type="number"
+                                id="width-input"
+                                min="1"
+                                step="1"
+                                aria-label="Image width"
+                                class="ruler-input ruler-input-horizontal form-control text-center"
+                                style="width: 7ch; font-size: 1.1em; background: #fff; border: 2px solid #1976d2; z-index: 2;"
+                            />
+                            <div class="phantom-box" style="width: 6ch;"></div>
+                        </div>
                     </div>
-                    <div class="width-ruler-container">
-                        <div class="ruler-line-horizontal"></div>
-                        <input
-                            type="number"
-                            id="width-input"
-                            min="1"
-                            step="1"
-                            aria-label="Image width"
-                            class="ruler-input ruler-input-horizontal"
-                        />
+                    <div id="ratio-display" class="ratio-display text-center mt-4"></div>
+                    <div class="controls d-flex flex-wrap gap-3 align-items-center justify-content-center mb-3 mt-2">
+                        <label class="form-label d-flex align-items-center gap-2 mb-0">
+                            <span class="fw-semibold">Color:</span>
+                            <input type="color" id="color-input" value="#ff0000" class="form-control form-control-color" style="width: 48px; height: 32px;" />
+                        </label>
+                        <label class="form-label d-flex align-items-center gap-2 mb-0">
+                            <span class="fw-semibold">Width:</span>
+                            <input type="range" id="stroke-width-input" min="1" max="50" value="2" class="form-range" style="width: 120px;" />
+                            <span id="stroke-width-display" class="badge bg-primary ms-2">2px</span>
+                        </label>
                     </div>
+                    <button type="button" id="download-btn" class="btn btn-success w-100 py-2 fw-bold fs-5 mb-2">Download</button>
                 </div>
-                <div id="ratio-display" class="ratio-display"></div>
-                <div class="controls">
-                    <label>
-                        Color:
-                        <input type="color" id="color-input" value="#ff0000" />
-                    </label>
-                    <label>
-                        Width:
-                        <input type="range" id="stroke-width-input" min="1" max="20" value="2" />
-                        <span id="stroke-width-display">2px</span>
-                    </label>
-                </div>
-                <button type="button" id="download-btn">Download</button>
             </div>
         </div>
     `;
