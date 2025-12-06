@@ -66,7 +66,6 @@ function createHTML() {
                         type="file"
                         id="file-input"
                         accept="image/*"
-                        capture="environment"
                         aria-label="Upload an image to overlay with grid"
                         class="form-control form-control-lg mx-auto"
                         style="max-width: 320px;"
